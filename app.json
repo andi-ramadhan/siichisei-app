@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "scs-app",
-    "slug": "scs-app",
+    "slug": "siichisei",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -43,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "89cf6fd6-c4a1-4c15-8dbe-a2c1bb8a4027"
+      }
+    },
+    "owner": "andira51"
   }
 }

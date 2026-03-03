@@ -1,7 +1,7 @@
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface MessageInputProps {
@@ -19,7 +19,10 @@ export function MessageInput({ onSend }: MessageInputProps) {
   };
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, Spacing.sm) }]}>
+    <View style={[
+      styles.container,
+      { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, Spacing.sm) : Spacing.sm }
+    ]}>
       <TextInput
         value={text}
         onChangeText={setText}

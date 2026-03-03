@@ -10,13 +10,13 @@ import {
   Dimensions,
   Modal,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -42,6 +42,7 @@ interface CallStageProps {
 
 export function CallStage({ classroomId, classroomName, isTeacherOrAdmin }: CallStageProps) {
   const { isInCall, isCallMinimized, toggleMinimize, participants, isMuted } = useAgoraStore();
+  const insets = useSafeAreaInsets();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export function CallStage({ classroomId, classroomName, isTeacherOrAdmin }: Call
 
   if (!isInCall || isCallMinimized) return null;
 
-  const participantCount = participants.size + 1; // include self
+  const participantCount = participants.size + 1; // remote participants + self
 
   return (
     <Modal
@@ -69,7 +70,7 @@ export function CallStage({ classroomId, classroomName, isTeacherOrAdmin }: Call
       <StatusBar barStyle="light-content" backgroundColor={Stage.bg} />
       <View style={styles.container}>
         {/* Header */}
-        <SafeAreaView style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
           <Pressable
             onPress={toggleMinimize}
             style={({ pressed }) => [styles.minimizeBtn, { opacity: pressed ? 0.7 : 1 }]}
@@ -85,7 +86,7 @@ export function CallStage({ classroomId, classroomName, isTeacherOrAdmin }: Call
             </View>
           </View>
           <View style={{ width: 40 }} />
-        </SafeAreaView>
+        </View>
 
         <ScrollView
           style={styles.scrollArea}
@@ -115,7 +116,7 @@ export function CallStage({ classroomId, classroomName, isTeacherOrAdmin }: Call
           {/* Participants */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Participants</Text>
-            <ParticipantList isTeacherOrAdmin={isTeacherOrAdmin} />
+            <ParticipantList isTeacherOrAdmin={isTeacherOrAdmin} classroomId={classroomId} />
           </View>
 
           {/* Soundboard */}
@@ -125,7 +126,7 @@ export function CallStage({ classroomId, classroomName, isTeacherOrAdmin }: Call
         </ScrollView>
 
         {/* Call Controls */}
-        <View style={styles.controlsBar}>
+        <View style={[styles.controlsBar, { paddingBottom: insets.bottom }]}>
           <CallControls classroomId={classroomId} isTeacherOrAdmin={isTeacherOrAdmin} />
         </View>
       </View>

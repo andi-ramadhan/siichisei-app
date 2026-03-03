@@ -5,20 +5,23 @@ import { MessageBubble } from '@/components/chat/MessageBubble';
 import { MessageInput } from '@/components/chat/MessageInput';
 import { AddStudentModal } from '@/components/classroom/AddStudentModal';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/theme';
+import { useMicControlSignaling } from '@/hooks/useMicControlSignaling';
 import { supabase } from '@/lib/supabase';
 import type { Classroom, Message } from '@/lib/types';
 import { useAgoraStore } from '@/stores/agora-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { useChatStore } from '@/stores/chat-store';
 import { Ionicons } from '@expo/vector-icons';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 export default function ClassroomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   const listRef = useRef<FlatList>(null);
+  const headerHeight = useHeaderHeight();
 
   const { profile } = useAuthStore();
   const { messages, isLoading, fetchMessages, sendMessage, subscribeToMessages, unsubscribe, markAsRead, readBy, fetchReadReceipts } = useChatStore();
@@ -30,6 +33,9 @@ export default function ClassroomScreen() {
 
   const isTeacherOrAdmin = profile?.role === 'teacher' || profile?.role === 'admin';
 
+  // Mic control signaling: teacher can mute/unmute students, students receive commands
+  useMicControlSignaling(id ?? '', isTeacherOrAdmin);
+
   useEffect(() => {
     if (!id) return;
 
@@ -37,13 +43,8 @@ export default function ClassroomScreen() {
     fetchMessages(id);
     fetchMemberIds();
 
-    const keyboardSub = Keyboard.addListener('keyboardDidShow', () => {
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
-    });
-
     return () => {
       unsubscribe();
-      keyboardSub.remove();
     };
   }, [id]);
 
@@ -133,15 +134,18 @@ export default function ClassroomScreen() {
 
   const handleStartCall = async () => {
     if (!id) return;
+    if (isInCall) return; // Already in a call
     await initEngine();
     await startCall(id);
     fetchClassroom();
   };
 
   const handleJoinCall = async () => {
-    if (!id || !classroom?.call_channel_name || !profile) return;
+    if (!id || !profile) return;
+    // Use call_channel_name from state, or derive it from classroomId as fallback
+    const channelName = classroom?.call_channel_name ?? `classroom-${id}`;
     await initEngine();
-    await joinCall(id, classroom.call_channel_name, profile.role);
+    await joinCall(id, channelName, profile.role);
   };
 
   const handleSend = (content: string) => {
@@ -169,8 +173,8 @@ export default function ClassroomScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior="padding"
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
     >
       <CallBanner
         isCallActive={classroom?.is_call_active ?? false}
